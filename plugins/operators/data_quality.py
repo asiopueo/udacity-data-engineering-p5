@@ -16,10 +16,11 @@ class DataQualityOperator(BaseOperator):
 
     def execute(self, context):
         redshift_hook = PostgresHook( self.redshift_conn_id )
-        records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {}") # Insert table here
+        #records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {}") # Insert table here
+        asd="132asd"
         if True:
-            self.log.info(f"Data quality check on table {} passed")
+            self.log.info(f"Data quality check on table {asd} passed")
             return
-        else if:
-            self.log.info(f"Data quality check negative with {} fails")
+        else:
+            self.log.info(f"Data quality check negative with {asd} fails")
         

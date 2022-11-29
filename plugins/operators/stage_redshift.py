@@ -1,3 +1,4 @@
+from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -43,7 +44,7 @@ class StageToRedshiftOperator(BaseOperator):
         
         s3_path = "s3://{}/{}".format(self.s3_bucket, rendered_key)
         
-        self.log.info("Staging data from S3 to Redshift")
+        self.log.info(f"Staging data staging from bucket {self.s3_bucket} (S3) to table {self.table} (Redshift)")
         
         formatted_sql = self.copy_sql.format(
             self.table,
@@ -55,7 +56,7 @@ class StageToRedshiftOperator(BaseOperator):
         )
         
         redshift.run(formatted_sql)
-
+        self.log.info(f"Finished data staging from bucket {self.s3_bucket} (S3) to table {self.table} (Redshift)")
 
 
 

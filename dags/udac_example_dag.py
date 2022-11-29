@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators import (
+from operators import (
     StageToRedshiftOperator, 
     LoadFactOperator, 
     LoadDimensionOperator, 
@@ -10,8 +10,6 @@ from airflow.operators import (
 )
 from helpers import SqlQueries
 
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
 
 default_args = {
     'owner': 'udacity',
@@ -19,6 +17,8 @@ default_args = {
     'start_date': datetime(2019, 1, 12),
     'retries': 3,
     'retry_delay': timedelta(minutes=3),
+    'email_on_retry': False,
+    'email_on_failure': False,
     'catchup': False
 }
 
@@ -28,7 +28,7 @@ dag = DAG('udac_example_dag',
           schedule_interval='@hourly'
 )
 
-start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
+start_operator = DummyOperator(task_id='Begin_execution', dag=dag)
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
@@ -37,7 +37,9 @@ stage_events_to_redshift = StageToRedshiftOperator(
     aws_credentials_id="aws_credentials",
     table="public.staging_events",
     s3_bucket="udacity-dend",
-    s3_key="log_data"   
+    #s3_key="log_data",
+    s3_key="log_data/{{execution_date.year}}/{{execution_date.month}}/{{ds}}-events.json",
+    #extra_parameter='s3://udacity-dend/log_json_path.json',
 )
 
 stage_songs_to_redshift = StageToRedshiftOperator(
@@ -47,42 +49,53 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     aws_credentials_id="aws_credentials",
     table="public.staging_songs",
     s3_bucket="udacity-dend",
-    s3_key="song_data"                 
+    s3_key="song_data",
+    #extra_parameter='auto'
 )
 
 load_songplays_table = LoadFactOperator(
     task_id='Load_songplays_fact_table',
     dag=dag,
     redshift_conn_id="redshift",
-    sql_query=SqlQueries.songplays_table_insert
+    table='songplays',
+    sql_query=SqlQueries.songplays_table_insert,
+    append_mode=True
 )
 
 load_user_dimension_table = LoadDimensionOperator(
     task_id='Load_user_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    sql_query=SqlQueries.user_table_insert
+    table='public.users',
+    sql_query=SqlQueries.user_table_insert,
+    append_mode=False
 )
 
 load_song_dimension_table = LoadDimensionOperator(
     task_id='Load_song_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    sql_query=SqlQueries.song_table_insert
+    table='public.songs',
+    sql_query=SqlQueries.song_table_insert,
+    append_mode=False
 )
 
 load_artist_dimension_table = LoadDimensionOperator(
     task_id='Load_artist_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    sql_query=SqlQueries.artist_table_insert
+    table='public.artists',
+    sql_query=SqlQueries.artist_table_insert,
+    append_mode=False
 )
 
 load_time_dimension_table = LoadDimensionOperator(
     task_id='Load_time_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    sql_query=SqlQueries.time_table_insert
+    table='public.time',
+    sql_query=SqlQueries.time_table_insert,
+    append_mode=False
 )
 
 run_quality_checks = DataQualityOperator(

@@ -8,7 +8,7 @@ from operators import (
     LoadDimensionOperator, 
     DataQualityOperator
 )
-from helpers import SqlQueries
+from helpers import SqlQueries, DataQualityChecks
 
 
 default_args = {
@@ -49,7 +49,7 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     aws_credentials_id="aws_credentials",
     table="public.staging_songs",
     s3_bucket="udacity-dend",
-    s3_key="song_data/",
+    s3_key="song_data/A/A/A/", # Set to "song_data/A/A/A/" for quicker test runs
     s3_region="us-west-2",
     json_option="auto"
 )
@@ -58,7 +58,7 @@ load_songplays_table = LoadFactOperator(
     task_id='Load_songplays_fact_table',
     dag=dag,
     redshift_conn_id="redshift",
-    table='songplays',
+    table='public.songplays',
     sql_query=SqlQueries.songplays_table_insert,
     append_mode=True
 )
@@ -102,7 +102,8 @@ load_time_dimension_table = LoadDimensionOperator(
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag,
-    redshift_conn_id="redshift" 
+    redshift_conn_id="redshift",
+    quality_checks = DataQualityChecks.quality_check_list
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
